@@ -259,6 +259,9 @@ def update(probabilities, one_gene, two_genes, have_trait, p):
     the person is in `have_gene` and `have_trait`, respectively.
     """
     for person in probabilities:
+        # Update all the probabilites with the joint probability
+
+        # Update according to gene
         if person in one_gene:
             probabilities[person]["gene"][1] += p
         elif person in two_genes:
@@ -266,6 +269,7 @@ def update(probabilities, one_gene, two_genes, have_trait, p):
         else:
             probabilities[person]["gene"][0] += p
 
+        # Update according to trait
         if person in have_trait:
             probabilities[person]["trait"][True] += p
         else:
