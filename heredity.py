@@ -140,27 +140,45 @@ def joint_probability(people, one_gene, two_genes, have_trait):
         * everyone not in set` have_trait` does not have the trait.
     """
     probabilities = dict()
-    print(people)
     for person in people.keys():
         if person in one_gene:
             # The person has one copy of genes
-            if person["mother"] and person["father"]:
+            if people[person]["mother"] and people[person]["father"]:
                 # The person got the gene from mother or father but not both
                 probabilities[person] = 0
-                # Gets one gene from mother, father
-                for parent in list(person["mother"], person["father"]):
-                    if parent in one_gene:
-                        # The parent passes on the gene with probably 0.5
-                        # If the gene wasn't passed, it mutates
-                        # Else the gene doesn't mutate
-                        probabilities[person] += 0.5 * PROBS["mutation"] + 0.5 * (1-PROBS["mutation"])
-                    elif parent in two_genes:
+                # Gets good gene from mother and bad gene from father
+                goodParent = people[person]["mother"]
+                badParent = people[person]["father"]
+                for i in range(2):
+                    tempProbability = 1
+                    # Good parent
+                    if goodParent in one_gene:
+                        tempProbability *= ((0.5*PROBS["mutation"]) +
+                                            (0.5*(1-PROBS["mutation"])))
+                    elif goodParent in two_genes:
                         # The parent definitely passes the gene and it doesn't mutate
-                        probabilities[person] += (1-PROBS["mutation"])
+                        tempProbability *= (1-PROBS["mutation"])
                     else:
                         # The parent doesn't pass the gene and it mutates
-                        probabilities[person] += PROBS["mutation"]
+                        tempProbability *= PROBS["mutation"]
 
+                    # Bad Parent
+                    if badParent in one_gene:
+                        tempProbability *= ((0.5*PROBS["mutation"]) +
+                                            (0.5*(1-PROBS["mutation"])))
+                    elif badParent in two_genes:
+                        # The parent definitely passes the gene and it doesn't mutate
+                        tempProbability *= PROBS["mutation"]
+                    else:
+                        # The parent doesn't pass the gene and it mutates
+                        tempProbability *= (1-PROBS["mutation"])
+
+                    probabilities[person] += tempProbability
+
+                    # Swapping the parents for the other case
+                    # Gets good gene from father, bad gene from mother
+                    goodParent = people[person]["father"]
+                    badParent = people[person]["mother"]
             else:
                 probabilities[person] = PROBS["gene"][1]
 
@@ -172,17 +190,18 @@ def joint_probability(people, one_gene, two_genes, have_trait):
 
         elif person in two_genes:
             # The person has two copies of genes
-            if person["mother"] and person["father"]:
+            if people[person]["mother"] and people[person]["father"]:
                 # The person got the genes from both the parents
                 probabilities[person] = 1
 
                 # Calculating the probability for mother
-                for parent in list(person["mother"], person["father"]):
+                for parent in [people[person]["mother"], people[person]["father"]]:
                     if parent in one_gene:
                         # The parent passes on the gene with probably 0.5
                         # If the gene wasn't passed, it mutates
                         # Else the gene doesn't mutate
-                        probabilities[person] *= (0.5 * PROBS["mutation"] + 0.5 * (1-PROBS["mutation"]))
+                        probabilities[person] *= (0.5 * PROBS["mutation"] +
+                                                  0.5 * (1-PROBS["mutation"]))
                     elif parent in two_genes:
                         # The parent definitely passes the gene and it doesn't mutate
                         probabilities[person] *= (1-PROBS["mutation"])
@@ -202,18 +221,19 @@ def joint_probability(people, one_gene, two_genes, have_trait):
 
         else:
             # The person has zero copies of genes
-            if person["mother"] and person["father"]:
+            if people[person]["mother"] and people[person]["father"]:
                 probabilities[person] = 1
-                for parent in list (person["mother"], person["father"]):
+                for parent in [people[person]["mother"], people[person]["father"]]:
                     if parent in one_gene:
                         # The gene if passed mutates, else doesn't
-                        probabilities[person] *= (0.5 * PROBS["mutation"] + 0.5 * (1-PROBS["mutation"]))
+                        probabilities[person] *= (0.5 * PROBS["mutation"] +
+                                                  0.5 * (1-PROBS["mutation"]))
                     elif parent in two_genes:
                         # The gene definetely mutates
                         probabilities[person] *= PROBS["mutation"]
                     else:
                         # The gene hasn't mutated
-                        probabilities[person] *= (1-PROBS["mutated"])
+                        probabilities[person] *= (1-PROBS["mutation"])
             else:
                 probabilities[person] = PROBS["gene"][0]
 
@@ -222,16 +242,13 @@ def joint_probability(people, one_gene, two_genes, have_trait):
                 probabilities[person] *= PROBS["trait"][0][True]
             else:
                 probabilities[person] *= PROBS["trait"][0][False]
-        
 
     # Calculating the joint probability
-    totalProbability = 1
-    for probability in probabilities:
-        totalProbability *= probability
+    jointProbability = 1
+    for probability in probabilities.values():
+        jointProbability *= probability
 
-    return totalProbability
-    
-    raise NotImplementedError
+    return jointProbability
 
 
 def update(probabilities, one_gene, two_genes, have_trait, p):
@@ -241,6 +258,7 @@ def update(probabilities, one_gene, two_genes, have_trait, p):
     Which value for each distribution is updated depends on whether
     the person is in `have_gene` and `have_trait`, respectively.
     """
+    print(probabilities)
     raise NotImplementedError
 
 
@@ -255,7 +273,6 @@ def normalize(probabilities):
 
     for key in probabilities.keys():
         probabilities[key] /= sumOfProbabilities
-
 
 
 if __name__ == "__main__":
